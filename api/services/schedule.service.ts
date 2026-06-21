@@ -9,6 +9,8 @@ import {
   ScheduleStatistics,
   Conflict,
   MemberShiftCount,
+  ShiftType,
+  SHIFT_LABELS,
 } from '../../shared/types';
 import { addDays, formatDate, parseDate } from '../utils/date.utils';
 
@@ -22,10 +24,11 @@ export const scheduleService = {
     cycleDays?: number;
     dailyRequired?: number;
   }): Promise<ScheduleGenerateResult> {
-    const [members, config, unavailableMap] = await Promise.all([
+    const [members, config, unavailableMap, shiftConfigs] = await Promise.all([
       memberService.getAllMembers(),
       configService.getConfig(),
       memberService.getAllUnavailableDatesAsMap(),
+      configService.getAllShiftConfigs(),
     ]);
 
     const unavailableDates = Array.from(unavailableMap.entries()).flatMap(([memberId, dates]) =>
@@ -41,6 +44,7 @@ export const scheduleService = {
       members,
       unavailableDates,
       config,
+      shiftConfigs,
       params?.startDate,
       params?.cycleDays,
       params?.dailyRequired
@@ -56,6 +60,7 @@ export const scheduleService = {
           totalShifts: 0,
           memberShifts: [],
           maxConsecutive: 0,
+          shiftBreakdown: { morning: 0, evening: 0, night: 0, day: 0 },
         },
       };
     }
@@ -79,7 +84,8 @@ export const scheduleService = {
       unavailableMap,
       config,
       actualStartDate,
-      endDate
+      endDate,
+      shiftConfigs
     );
 
     const statistics = await this.getStatistics(actualStartDate, endDate);
@@ -108,6 +114,10 @@ export const scheduleService = {
 
     if (s1.date !== s2.date) {
       throw new Error('只能交换同一天的排班');
+    }
+
+    if (s1.shift !== s2.shift) {
+      throw new Error('只能交换同一班次的排班');
     }
 
     const [config, unavailableMap] = await Promise.all([
@@ -169,15 +179,34 @@ export const scheduleService = {
       throw new Error('排班记录不存在');
     }
 
-    const [config, unavailableMap, members] = await Promise.all([
+    const [config, unavailableMap, members, shiftConfigs] = await Promise.all([
       configService.getConfig(),
       memberService.getAllUnavailableDatesAsMap(),
       memberService.getAllMembers(),
+      configService.getAllShiftConfigs(),
     ]);
 
     const member = members.find((m) => m.id === newMemberId);
     if (!member) {
       throw new Error('目标成员不存在');
+    }
+
+    if (config.enableMultiShift) {
+      const sc = shiftConfigs.find((c) => c.shiftType === schedule.shift);
+      if (sc && sc.memberIds.length > 0 && !sc.memberIds.includes(newMemberId)) {
+        return {
+          success: false,
+          schedules: [],
+          conflicts: [{
+            type: 'unavailable',
+            severity: 'error',
+            date: schedule.date,
+            memberId: newMemberId,
+            shiftType: schedule.shift,
+            message: `该成员不在${SHIFT_LABELS[schedule.shift]}可值班名单内`,
+          }],
+        };
+      }
     }
 
     const allSchedules = await scheduleRepository.findByDateRange(
@@ -248,11 +277,12 @@ export const scheduleService = {
   },
 
   async detectConflicts(startDate: string, endDate: string): Promise<Conflict[]> {
-    const [schedules, members, unavailableMap, config] = await Promise.all([
+    const [schedules, members, unavailableMap, config, shiftConfigs] = await Promise.all([
       scheduleRepository.findByDateRange(startDate, endDate),
       memberService.getAllMembers(),
       memberService.getAllUnavailableDatesAsMap(),
       configService.getConfig(),
+      configService.getAllShiftConfigs(),
     ]);
 
     return conflictDetector.detectAllConflicts(
@@ -261,7 +291,8 @@ export const scheduleService = {
       unavailableMap,
       config,
       startDate,
-      endDate
+      endDate,
+      shiftConfigs
     );
   },
 
@@ -276,6 +307,13 @@ export const scheduleService = {
 
     const schedules = await scheduleRepository.findByDateRange(actualStart, actualEnd);
 
+    const shiftBreakdown: Record<ShiftType, number> = {
+      morning: 0,
+      evening: 0,
+      night: 0,
+      day: 0,
+    };
+
     const memberShifts: MemberShiftCount[] = [];
     for (const member of members) {
       const count = await scheduleRepository.countByMemberAndDateRange(
@@ -283,22 +321,45 @@ export const scheduleService = {
         actualStart,
         actualEnd
       );
+
+      const sb: Record<ShiftType, number> = {
+        morning: 0,
+        evening: 0,
+        night: 0,
+        day: 0,
+      };
+
+      const mScheds = schedules.filter((s) => s.memberId === member.id && !s.isLeave);
+      for (const s of mScheds) {
+        sb[s.shift]++;
+      }
+
+      for (const s of mScheds) {
+        shiftBreakdown[s.shift]++;
+      }
+
       memberShifts.push({
         memberId: member.id,
         memberName: member.name,
         count,
+        shiftBreakdown: sb,
       });
     }
 
     const maxConsecutive = schedulingAlgorithm.getMaxConsecutiveDays(schedules);
 
+    const totalDays = Math.ceil(
+      (parseDate(actualEnd).getTime() - parseDate(actualStart).getTime()) / (1000 * 60 * 60 * 24)
+    ) + 1;
+
+    const totalShifts = schedules.filter((s) => !s.isLeave || s.substituteId).length;
+
     return {
-      totalDays: Math.ceil(
-        (parseDate(actualEnd).getTime() - parseDate(actualStart).getTime()) / (1000 * 60 * 60 * 24)
-      ) + 1,
-      totalShifts: schedules.filter((s) => !s.isLeave || s.substituteId).length,
+      totalDays,
+      totalShifts,
       memberShifts,
       maxConsecutive,
+      shiftBreakdown,
     };
   },
 };

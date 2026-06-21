@@ -1,7 +1,24 @@
 import { runQuery, getQuery, allQuery } from '../config/database';
 import { Member, UnavailableDate } from '../../shared/types';
 
-const toMember = (row: any): Member => ({
+interface MemberRow {
+  id: number;
+  name: string;
+  department: string | null;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
+}
+
+interface UnavailableDateRow {
+  id: number;
+  member_id: number;
+  date: string;
+  reason: string | null;
+  created_at: string;
+}
+
+const toMember = (row: MemberRow): Member => ({
   id: row.id,
   name: row.name,
   department: row.department || undefined,
@@ -10,7 +27,7 @@ const toMember = (row: any): Member => ({
   createdAt: row.created_at,
 });
 
-const toUnavailableDate = (row: any): UnavailableDate => ({
+const toUnavailableDate = (row: UnavailableDateRow): UnavailableDate => ({
   id: row.id,
   memberId: row.member_id,
   date: row.date,
@@ -20,12 +37,12 @@ const toUnavailableDate = (row: any): UnavailableDate => ({
 
 export const memberRepository = {
   async findAll(): Promise<Member[]> {
-    const rows = await allQuery('SELECT * FROM members ORDER BY id');
+    const rows = await allQuery<MemberRow>('SELECT * FROM members ORDER BY id');
     return rows.map(toMember);
   },
 
   async findById(id: number): Promise<Member | null> {
-    const row = await getQuery('SELECT * FROM members WHERE id = ?', [id]);
+    const row = await getQuery<MemberRow>('SELECT * FROM members WHERE id = ?', [id]);
     return row ? toMember(row) : null;
   },
 
@@ -73,7 +90,7 @@ export const memberRepository = {
   },
 
   async findUnavailableDates(memberId: number): Promise<UnavailableDate[]> {
-    const rows = await allQuery(
+    const rows = await allQuery<UnavailableDateRow>(
       'SELECT * FROM unavailable_dates WHERE member_id = ? ORDER BY date',
       [memberId]
     );
@@ -81,7 +98,7 @@ export const memberRepository = {
   },
 
   async findAllUnavailableDates(): Promise<UnavailableDate[]> {
-    const rows = await allQuery('SELECT * FROM unavailable_dates ORDER BY date');
+    const rows = await allQuery<UnavailableDateRow>('SELECT * FROM unavailable_dates ORDER BY date');
     return rows.map(toUnavailableDate);
   },
 
@@ -90,8 +107,8 @@ export const memberRepository = {
       'INSERT INTO unavailable_dates (member_id, date, reason) VALUES (?, ?, ?)',
       [memberId, date, reason || null]
     );
-    const row = await getQuery('SELECT * FROM unavailable_dates WHERE id = ?', [result.lastID]);
-    return toUnavailableDate(row);
+    const row = await getQuery<UnavailableDateRow>('SELECT * FROM unavailable_dates WHERE id = ?', [result.lastID]);
+    return toUnavailableDate(row as UnavailableDateRow);
   },
 
   async deleteUnavailableDate(id: number): Promise<boolean> {

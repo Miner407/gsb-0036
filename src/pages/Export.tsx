@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/Toast';
 import { formatDate, addDays } from '@/utils/date';
 
 const Export = () => {
-  const { config, schedules, members, loadSchedules, exportService, statistics, loadStatistics } =
+  const { config, schedules, members, loadSchedules, exportService, loadStatistics } =
     useScheduleStore();
 
   const [startDate, setStartDate] = useState(formatDate(new Date()));
@@ -36,8 +36,8 @@ const Export = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
       toast.success('导出成功');
-    } catch (error: any) {
-      toast.error(error.message || '导出失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '导出失败');
     }
   };
 

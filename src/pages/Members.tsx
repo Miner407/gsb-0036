@@ -39,7 +39,7 @@ const Members = () => {
 
   useEffect(() => {
     loadMembers();
-  }, []);
+  }, [loadMembers]);
 
   useEffect(() => {
     if (editingMember) {
@@ -66,8 +66,8 @@ const Members = () => {
       }
       setShowMemberModal(false);
       setEditingMember(null);
-    } catch (error: any) {
-      toast.error(error.message || '操作失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '操作失败');
     }
   };
 
@@ -76,8 +76,8 @@ const Members = () => {
       try {
         await deleteMember(id);
         toast.success('删除成功');
-      } catch (error: any) {
-        toast.error(error.message || '删除失败');
+      } catch (error: unknown) {
+        toast.error((error as Error).message || '删除失败');
       }
     }
   };
@@ -105,8 +105,8 @@ const Members = () => {
       await addUnavailableDates(selectedMember.id, data);
       toast.success('不可值班日期添加成功');
       setUnavailableForm({ date: '', startDate: '', endDate: '', reason: '', mode: 'single' });
-    } catch (error: any) {
-      toast.error(error.message || '添加失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '添加失败');
     }
   };
 
@@ -117,8 +117,8 @@ const Members = () => {
         await loadUnavailableDates(selectedMember.id);
       }
       toast.success('删除成功');
-    } catch (error: any) {
-      toast.error(error.message || '删除失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '删除失败');
     }
   };
 

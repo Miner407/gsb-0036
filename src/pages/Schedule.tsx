@@ -19,7 +19,7 @@ import Input from '@/components/ui/Input';
 import Badge from '@/components/ui/Badge';
 import { toast } from '@/components/ui/Toast';
 import { formatDate, addDays, getWeekday, isToday, isWeekend } from '@/utils/date';
-import type { Schedule, Member, Conflict } from '@shared/types';
+import type { Schedule, Conflict } from '@shared/types';
 
 const SchedulePage = () => {
   const {
@@ -29,6 +29,7 @@ const SchedulePage = () => {
     conflicts,
     generateSchedule,
     loadSchedules,
+    loadConfig,
     checkConflicts,
     swapSchedules,
     replaceSchedule,
@@ -49,6 +50,10 @@ const SchedulePage = () => {
   const [leaveForm, setLeaveForm] = useState({ leaveType: 'annual', reason: '' });
   const [replaceForm, setReplaceForm] = useState({ newMemberId: 0 });
   const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    loadConfig();
+  }, [loadConfig]);
 
   useEffect(() => {
     if (config) {
@@ -109,8 +114,8 @@ const SchedulePage = () => {
     try {
       await generateSchedule();
       toast.success('排班生成成功');
-    } catch (error: any) {
-      toast.error(error.message || '生成失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '生成失败');
     } finally {
       setGenerating(false);
     }
@@ -120,8 +125,8 @@ const SchedulePage = () => {
     try {
       await checkConflicts();
       toast.success('冲突检查完成');
-    } catch (error: any) {
-      toast.error(error.message || '检查失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '检查失败');
     }
   };
 
@@ -142,8 +147,8 @@ const SchedulePage = () => {
       setShowSwapModal(false);
       setSwapData(null);
       setSelectedSchedule(null);
-    } catch (error: any) {
-      toast.error(error.message || '调班失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '调班失败');
     }
   };
 
@@ -160,8 +165,8 @@ const SchedulePage = () => {
       toast.success('请假标记成功');
       setShowLeaveModal(false);
       setSelectedSchedule(null);
-    } catch (error: any) {
-      toast.error(error.message || '操作失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '操作失败');
     }
   };
 
@@ -169,8 +174,8 @@ const SchedulePage = () => {
     try {
       await cancelLeave(scheduleId);
       toast.success('已取消请假标记');
-    } catch (error: any) {
-      toast.error(error.message || '操作失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '操作失败');
     }
   };
 
@@ -187,8 +192,8 @@ const SchedulePage = () => {
       toast.success('替班成功');
       setShowReplaceModal(false);
       setSelectedSchedule(null);
-    } catch (error: any) {
-      toast.error(error.message || '替班失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '替班失败');
     }
   };
 

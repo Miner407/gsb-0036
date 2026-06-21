@@ -1,10 +1,11 @@
 import { scheduleRepository } from '../repositories/schedule.repository';
 import { memberService } from './member.service';
 import { generateScheduleCSV, downloadCSV } from '../utils/csv.utils';
-import { formatDate, addDays, parseDate } from '../utils/date.utils';
+import { formatDate } from '../utils/date.utils';
+import { ShiftType } from '../../shared/types';
 
 export const exportService = {
-  async exportToCSV(startDate?: string, endDate?: string): Promise<{
+  async exportToCSV(startDate?: string, endDate?: string, shiftType?: ShiftType): Promise<{
     content: string;
     headers: {
       'Content-Type': string;
@@ -23,16 +24,21 @@ export const exportService = {
       memberService.getAllMembers(),
     ]);
 
+    const filteredSchedules = shiftType
+      ? schedules.filter((s) => s.shift === shiftType)
+      : schedules;
+
     const memberMap = new Map(members.map((m) => [m.id, m.name]));
 
-    const schedulesWithNames = schedules.map((s) => ({
+    const schedulesWithNames = filteredSchedules.map((s) => ({
       ...s,
       memberName: memberMap.get(s.memberId) || '未知',
       substituteName: s.substituteId ? memberMap.get(s.substituteId) || '未知' : undefined,
     }));
 
     const csvContent = generateScheduleCSV(schedulesWithNames, members);
-    const filename = `排班表_${actualStart}_${actualEnd}.csv`;
+    const shiftSuffix = shiftType ? `_${shiftType}` : '';
+    const filename = `排班表${shiftSuffix}_${actualStart}_${actualEnd}.csv`;
 
     return downloadCSV(csvContent, filename);
   },

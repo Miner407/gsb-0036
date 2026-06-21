@@ -19,7 +19,7 @@ const Settings = () => {
 
   useEffect(() => {
     loadConfig();
-  }, []);
+  }, [loadConfig]);
 
   useEffect(() => {
     if (config) {
@@ -38,8 +38,8 @@ const Settings = () => {
     try {
       await updateConfig(formData);
       toast.success('配置保存成功');
-    } catch (error: any) {
-      toast.error(error.message || '保存失败');
+    } catch (error: unknown) {
+      toast.error((error as Error).message || '保存失败');
     }
   };
 

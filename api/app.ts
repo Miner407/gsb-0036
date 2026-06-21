@@ -1,21 +1,15 @@
 import express, {
   type Request,
   type Response,
-  type NextFunction,
 } from 'express'
 import cors from 'cors'
-import path from 'path'
 import dotenv from 'dotenv'
-import { fileURLToPath } from 'url'
 import memberRoutes from './routes/member.routes'
 import scheduleRoutes from './routes/schedule.routes'
 import configRoutes from './routes/config.routes'
 import exportRoutes from './routes/export.routes'
 import { errorHandler, notFoundHandler } from './middleware/error.handler'
 import { initDatabase } from './database/init'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 dotenv.config()
 
@@ -31,7 +25,7 @@ initDatabase().catch(err => {
 
 app.use(
   '/api/health',
-  (req: Request, res: Response, next: NextFunction): void => {
+  (req: Request, res: Response): void => {
     res.status(200).json({
       success: true,
       message: 'ok',

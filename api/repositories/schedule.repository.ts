@@ -1,20 +1,33 @@
 import { runQuery, getQuery, allQuery } from '../config/database';
-import { Schedule } from '../../shared/types';
+import { Schedule, ShiftType } from '../../shared/types';
 
-const toSchedule = (row: any): Schedule => ({
+interface ScheduleRow {
+  id: number;
+  date: string;
+  member_id: number;
+  is_leave: number | boolean;
+  leave_type: string | null;
+  substitute_id: number | null;
+  shift: ShiftType | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const toSchedule = (row: ScheduleRow): Schedule => ({
   id: row.id,
   date: row.date,
   memberId: row.member_id,
   isLeave: !!row.is_leave,
   leaveType: row.leave_type || undefined,
   substituteId: row.substitute_id || undefined,
+  shift: (row.shift as ShiftType) || 'day',
   createdAt: row.created_at,
   updatedAt: row.updated_at,
 });
 
 export const scheduleRepository = {
   async findByDateRange(startDate: string, endDate: string): Promise<Schedule[]> {
-    const rows = await allQuery(
+    const rows = await allQuery<ScheduleRow>(
       'SELECT * FROM schedules WHERE date >= ? AND date <= ? ORDER BY date, id',
       [startDate, endDate]
     );
@@ -22,14 +35,14 @@ export const scheduleRepository = {
   },
 
   async findById(id: number): Promise<Schedule | null> {
-    const row = await getQuery('SELECT * FROM schedules WHERE id = ?', [id]);
+    const row = await getQuery<ScheduleRow>('SELECT * FROM schedules WHERE id = ?', [id]);
     return row ? toSchedule(row) : null;
   },
 
-  async create(date: string, memberId: number): Promise<Schedule> {
+  async create(date: string, memberId: number, shift: ShiftType = 'day'): Promise<Schedule> {
     const result = await runQuery(
-      'INSERT INTO schedules (date, member_id) VALUES (?, ?)',
-      [date, memberId]
+      'INSERT INTO schedules (date, member_id, shift) VALUES (?, ?, ?)',
+      [date, memberId, shift]
     );
     return this.findById(result.lastID) as Promise<Schedule>;
   },
@@ -67,32 +80,32 @@ export const scheduleRepository = {
   },
 
   async countByMemberAndDateRange(memberId: number, startDate: string, endDate: string): Promise<number> {
-    const row = await getQuery(
+    const row = await getQuery<{ count: number }>(
       'SELECT COUNT(*) as count FROM schedules WHERE member_id = ? AND date >= ? AND date <= ? AND is_leave = 0',
       [memberId, startDate, endDate]
     );
-    return row?.count || 0;
+    return (row?.count as number) || 0;
   },
 
   async findByMemberAndDate(memberId: number, date: string): Promise<Schedule | null> {
-    const row = await getQuery(
+    const row = await getQuery<ScheduleRow>(
       'SELECT * FROM schedules WHERE member_id = ? AND date = ? LIMIT 1',
       [memberId, date]
     );
     return row ? toSchedule(row) : null;
   },
 
-  async bulkCreate(schedules: { date: string; memberId: number }[]): Promise<Schedule[]> {
+  async bulkCreate(schedules: { date: string; memberId: number; shift?: ShiftType }[]): Promise<Schedule[]> {
     const created: Schedule[] = [];
     for (const s of schedules) {
-      const schedule = await this.create(s.date, s.memberId);
+      const schedule = await this.create(s.date, s.memberId, s.shift || 'day');
       created.push(schedule);
     }
     return created;
   },
 
   async findConsecutiveByMember(memberId: number, date: string, maxDays: number): Promise<Schedule[]> {
-    const rows = await allQuery(
+    const rows = await allQuery<ScheduleRow>(
       `SELECT * FROM schedules 
        WHERE member_id = ? 
        AND date >= date(?, ?) 

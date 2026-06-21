@@ -1,3 +1,14 @@
+export type ShiftType = 'morning' | 'evening' | 'night' | 'day';
+
+export const SHIFT_LABELS: Record<ShiftType, string> = {
+  morning: '早班',
+  evening: '晚班',
+  night: '夜班',
+  day: '白班',
+};
+
+export const SHIFT_ORDER: ShiftType[] = ['morning', 'evening', 'night'];
+
 export interface Member {
   id: number;
   name: string;
@@ -15,6 +26,15 @@ export interface UnavailableDate {
   createdAt: string;
 }
 
+export interface ShiftConfig {
+  id: number;
+  shiftType: ShiftType;
+  dailyRequired: number;
+  memberIds: number[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ScheduleConfig {
   id: number;
   startDate: string;
@@ -22,6 +42,7 @@ export interface ScheduleConfig {
   dailyRequired: number;
   maxConsecutiveDays: number;
   balanceWeight: number;
+  enableMultiShift: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,6 +51,7 @@ export interface Schedule {
   id: number;
   date: string;
   memberId: number;
+  shift: ShiftType;
   isLeave: boolean;
   leaveType?: string;
   substituteId?: number;
@@ -37,7 +59,7 @@ export interface Schedule {
   updatedAt: string;
 }
 
-export type ConflictType = 'consecutive' | 'unavailable' | 'insufficient' | 'imbalance';
+export type ConflictType = 'consecutive' | 'unavailable' | 'insufficient' | 'duplicate_same_day' | 'imbalance';
 export type ConflictSeverity = 'warning' | 'error';
 
 export interface Conflict {
@@ -45,6 +67,7 @@ export interface Conflict {
   severity: ConflictSeverity;
   date?: string;
   memberId?: number;
+  shiftType?: ShiftType;
   message: string;
 }
 
@@ -52,6 +75,7 @@ export interface MemberShiftCount {
   memberId: number;
   memberName: string;
   count: number;
+  shiftBreakdown: Record<ShiftType, number>;
 }
 
 export interface ScheduleStatistics {
@@ -59,6 +83,7 @@ export interface ScheduleStatistics {
   totalShifts: number;
   memberShifts: MemberShiftCount[];
   maxConsecutive: number;
+  shiftBreakdown: Record<ShiftType, number>;
 }
 
 export interface ScheduleGenerateResult {
@@ -89,6 +114,12 @@ export interface UnavailableDateBatchRequest {
   startDate?: string;
   endDate?: string;
   reason?: string;
+}
+
+export interface ShiftConfigRequest {
+  shiftType: ShiftType;
+  dailyRequired: number;
+  memberIds: number[];
 }
 
 export interface OperationResult {

@@ -71,8 +71,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       const members = await memberApi.getAll();
       set({ members });
-    } catch (error: any) {
-      set({ error: error.message || '加载成员列表失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '加载成员列表失败' });
     } finally {
       set({ loading: false });
     }
@@ -83,8 +83,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       await memberApi.create(data);
       await get().loadMembers();
-    } catch (error: any) {
-      set({ error: error.message || '添加成员失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '添加成员失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -96,8 +96,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       await memberApi.update(id, data);
       await get().loadMembers();
-    } catch (error: any) {
-      set({ error: error.message || '更新成员失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '更新成员失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -109,8 +109,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       await memberApi.delete(id);
       await get().loadMembers();
-    } catch (error: any) {
-      set({ error: error.message || '删除成员失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '删除成员失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -124,8 +124,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       const newMap = new Map(get().unavailableDates);
       newMap.set(memberId, dates);
       set({ unavailableDates: newMap });
-    } catch (error: any) {
-      set({ error: error.message || '加载不可值班日期失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '加载不可值班日期失败' });
     } finally {
       set({ loading: false });
     }
@@ -136,8 +136,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       await memberApi.addUnavailableDates(memberId, data);
       await get().loadUnavailableDates(memberId);
-    } catch (error: any) {
-      set({ error: error.message || '添加不可值班日期失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '添加不可值班日期失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -148,8 +148,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     try {
       set({ loading: true, error: null });
       await memberApi.deleteUnavailableDate(id);
-    } catch (error: any) {
-      set({ error: error.message || '删除不可值班日期失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '删除不可值班日期失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -161,8 +161,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       const config = await configApi.get();
       set({ config });
-    } catch (error: any) {
-      set({ error: error.message || '加载配置失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '加载配置失败' });
     } finally {
       set({ loading: false });
     }
@@ -173,8 +173,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       const config = await configApi.update(data);
       set({ config });
-    } catch (error: any) {
-      set({ error: error.message || '更新配置失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '更新配置失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -186,8 +186,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       const schedules = await scheduleApi.get(startDate, endDate);
       set({ schedules });
-    } catch (error: any) {
-      set({ error: error.message || '加载排班表失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '加载排班表失败' });
     } finally {
       set({ loading: false });
     }
@@ -201,8 +201,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         set({ schedules: result.schedules, statistics: result.statistics, conflicts: result.conflicts });
       }
       return { success: result.success, conflicts: result.conflicts };
-    } catch (error: any) {
-      set({ error: error.message || '生成排班失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '生成排班失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -222,8 +222,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         set({ schedules: updated });
       }
       return { success: result.success, conflicts: result.conflicts };
-    } catch (error: any) {
-      set({ error: error.message || '调班失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '调班失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -243,8 +243,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
         set({ schedules: updated });
       }
       return { success: result.success, conflicts: result.conflicts };
-    } catch (error: any) {
-      set({ error: error.message || '调班失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '调班失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -258,8 +258,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       const current = get().schedules;
       const updated = current.map((s) => (s.id === scheduleId ? schedule : s));
       set({ schedules: updated });
-    } catch (error: any) {
-      set({ error: error.message || '标记请假失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '标记请假失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -273,8 +273,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       const current = get().schedules;
       const updated = current.map((s) => (s.id === scheduleId ? schedule : s));
       set({ schedules: updated });
-    } catch (error: any) {
-      set({ error: error.message || '取消请假失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '取消请假失败' });
       throw error;
     } finally {
       set({ loading: false });
@@ -286,8 +286,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       const statistics = await scheduleApi.getStatistics(startDate, endDate);
       set({ statistics });
-    } catch (error: any) {
-      set({ error: error.message || '加载统计数据失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '加载统计数据失败' });
     } finally {
       set({ loading: false });
     }
@@ -298,8 +298,8 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       set({ loading: true, error: null });
       const conflicts = await scheduleApi.getConflicts(startDate, endDate);
       set({ conflicts });
-    } catch (error: any) {
-      set({ error: error.message || '加载冲突数据失败' });
+    } catch (error: unknown) {
+      set({ error: (error as Error).message || '加载冲突数据失败' });
     } finally {
       set({ loading: false });
     }

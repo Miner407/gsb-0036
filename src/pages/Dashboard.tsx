@@ -13,7 +13,6 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import useScheduleStore from '@/store/useScheduleStore';
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { formatDate, addDays, isToday } from '@/utils/date';
 
@@ -25,14 +24,14 @@ const Dashboard = () => {
     const today = new Date();
     const start = formatDate(new Date(today.getFullYear(), today.getMonth(), 1));
     const end = formatDate(new Date(today.getFullYear(), today.getMonth() + 1, 0));
-    
+
     Promise.all([
       loadMembers(),
       loadConfig(),
       loadSchedules(start, end),
       loadStatistics(start, end),
     ]);
-  }, []);
+  }, [loadMembers, loadConfig, loadSchedules, loadStatistics]);
 
   const todayStr = formatDate(new Date());
   const todaySchedules = schedules.filter((s) => s.date === todayStr && !s.isLeave);
